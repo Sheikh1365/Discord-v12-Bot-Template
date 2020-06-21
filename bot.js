@@ -3,10 +3,9 @@ var ChildProcess  = require("child_process");
 var Bot           = new Discord.Client();
 var Embed         = Discord.MessageEmbed;
 
-var Util        = require(__dirname + '/util/util.js');
-var Misc        = require(__dirname + '/util/misc.js');
 var Permission  = require(__dirname + '/util/permissions.js');
 
+// Sheikh's ID, Saad's ID
 var Developers = [`552885697527283713`, `692505234571788359`];
 var botProcessId = -1;
 var RestartChannel = null;
@@ -209,7 +208,7 @@ function error(message, err)
     return message.channel.send(err)
 }
 
-Bot.login("NzI0MDMwMjg2NTMwMjE1OTc3.Xu6P0w.MmQvnHHrxl8ycQnZAk-FzIykBSU");
+Bot.login("[YOUR BOT TOKEN]");
 
 process.on('message', (m) =>
 {
