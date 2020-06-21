@@ -61,9 +61,10 @@ Bot.on("message", async message =>
         args = cbits.join(command).trim().split(" ");
     }
 	
-	let CommandObject = commands[command].alias ? commands[commands[command].alias] : commands[command]
-    if (message.channel.type == "text" && CommandObject)
+    if (message.channel.type == "text" && commands[command])
     {
+		let CommandObject = commands[command].alias ? commands[commands[command].alias] : commands[command]
+		if (!CommandObject) return message.channel.send("Something went wrong internally! Contact my developer!");
 		try
 		{
 			let data = {};
@@ -81,7 +82,7 @@ Bot.on("message", async message =>
                         .setColor(`#FF0000`)
                         .setDescription(error);
 
-                    error(embed);
+                    message.channel.send(embed);
                 }
             }
             else
@@ -117,7 +118,7 @@ var commands = {
         description: "A simple command to check the latency of the bot.",
         category: "General",
         arguments: [],
-        permission: 1,
+        permission: 1, // everyone
         usage: `${prefix}ping`,
         exampleusage: `${prefix}ping`,
         run: function(message, args, data)
@@ -132,7 +133,7 @@ var commands = {
         description: "Sends the permission level of the user",
         category: "General",
         arguments: [],
-        permission: 1,
+        permission: 1, // everyone
         usage: `${prefix}permission`,
         exampleusage: `${prefix}permission`,
         run: function(message, args, data)
@@ -146,7 +147,7 @@ var commands = {
         description: "Runs the code specified. Should only be accessed by a developer.",
         category: "Development",
         arguments: ["-r code"],
-        permission: 100,
+        permission: 100, // developers
         usage: `${prefix}eval <code>`,
         exampleusage: `${prefix}eval message.reply(103 * 513);`,
         run: function(message, args, data)
@@ -176,7 +177,7 @@ var commands = {
         description: "Restarts the bot.",
         category: "General",
         arguments: [],
-        permission: 100, // Developer only
+        permission: 100, // developer only
         usage: `${prefix}restart`,
         exampleusage: `${prefix}restart`,
         run: function(message, args, data)
@@ -193,6 +194,88 @@ var commands = {
 			});
         }
     },
+    slowmode:
+    {
+        name: "Slowmode",
+        description: "Enables slowmode in the channel the command is called from",
+        category: "General",
+        arguments: [],
+        permission: 4, // moderators
+        usage: `${prefix}slowmode <seconds>`,
+        exampleusage: `${prefix}slowmode 5`,
+        run: function(message, args, data)
+        {
+			if (!args[0]) return "No amount of time specified for slowmode!";
+			if (args[0] == "none" || args[0] == "off") args[0] = 0;
+			
+			try
+			{
+				message.channel.setRateLimitPerUser(parseInt(args[0]), "Changed via command");
+			}
+			catch (e)
+			{
+				return message.channel.send("You must specify the slowmode with a number, e.g. `" + prefix + "slowmode 10`!");
+			}
+        }
+    },
+	ban: {
+		name: "Ban",
+        description: "Bans the user specified",
+        category: "General",
+        arguments: ["-r user", "-o reason"],
+        permission: 4, // moderators
+        usage: `${prefix}ban <@user or user ID> <reason>`,
+        exampleusage: `${prefix}ban @Jerome#2313 DM advertising OR ${prefix}ban 0129611422104123 DM avertising :rage:`,
+        run: function(message, args, data)
+        {
+			if (!args[0]) return "You need to specify who to ban!";
+			let member = message.mentions.members.first();
+			if (!member)
+			{
+				member = args[0];
+				if (isNaN(member)) return "You didn't mention a valid user, nor provide a valid ID.";
+			}
+			else member = member.id;
+			
+			let reason = args[1] || "Banned by " + message.author.username + "."
+			
+			message.guild.members.ban(member, {reason: reason}).then(user => 
+			{
+				message.channel.send(":white_check_mark: Banned **" + user.tag + "** with reason **" + reason + "**");
+			});
+        }
+	},
+	unban: {
+		name: "Unan",
+        description: "Unbans the user specified",
+        category: "General",
+        arguments: ["-r user", "-o reason"],
+        permission: 4, // moderators
+        usage: `${prefix}unban <@user or user ID> <reason>`,
+        exampleusage: `${prefix}unban @Jerome#2313 Forgiven for DM advertising OR ${prefix}unban 0129611422104123 Forgiven for DM avertising :rage:`,
+        run: function(message, args, data)
+        {
+			if (!args[0]) return "You need to specify who to unban!";
+			let member = message.content.split("<@")[1];
+			if (!member)
+			{
+				member = args[0];
+				if (isNaN(member)) return "You didn't mention a valid user, nor provide a valid ID.";
+			}
+			else member = message.content.split("<@!")[1].split(">")[0];
+			
+			let reason = args[1] || "Unbanned by " + message.author.username + "."
+			
+			message.guild.members.unban(member, {reason: reason}).then(user => 
+			{
+				message.channel.send(":white_check_mark: Unbanned **" + user.tag + "** with reason **" + reason + "**");
+			});
+        }
+	},
+    ratelimit:
+    {
+      alias: "slowmode"
+    },
     update:
     {
         alias: "restart"
@@ -203,12 +286,7 @@ var commands = {
     }
 }
 
-function error(message, err)
-{
-    return message.channel.send(err)
-}
-
-Bot.login("[YOUR BOT TOKEN]");
+Bot.login(process.env.TOKEN);
 
 process.on('message', (m) =>
 {
